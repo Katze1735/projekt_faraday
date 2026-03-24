@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 import plotly.graph_objects as go
+import io
 
 st.set_page_config(page_title="AI Air Optimizer", layout="wide")
 st.title("🌿 AI Fresh Air Advisor")
@@ -55,3 +56,29 @@ if uploaded_file:
     # --- THE "OPTIMAL WINDOW" LOGIC ---
     # We look for high CO2 but "comfortable" external-ish temps (if available)
     st.info("💡 **Pro-tip:** The AI suggests opening windows 15 minutes *before* your typical peak hours to prevent CO2 buildup entirely.")
+
+# --- GENERATE DOWNLOADABLE SCHEDULE ---
+st.divider()
+st.subheader("📅 Export Your Ventilation Schedule")
+
+if not danger_zones.empty:
+    # Clean up the danger zones into a readable schedule
+    schedule_df = danger_zones[['timestamp', 'predicted_co2']].copy()
+    schedule_df['action'] = "Open Window"
+    
+    # Convert to CSV format for downloading
+    def convert_df(df):
+        return df.to_csv(index=False).encode('utf-8')
+
+    csv_data = convert_df(schedule_df)
+
+    st.download_button(
+        label="📥 Download AI Ventilation Schedule (CSV)",
+        data=csv_data,
+        file_name='fresh_air_schedule.csv',
+        mime='text/csv',
+    )
+    
+    st.write("This file contains every timestamp where the AI expects CO2 to cross 1000ppm.")
+else:
+    st.write("No high-CO2 periods predicted for this dataset!")
